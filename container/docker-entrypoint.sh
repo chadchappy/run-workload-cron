@@ -53,10 +53,6 @@ stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 EOF
 
-# Run initial workload submission
-log "Running initial workload submission..."
-su runai -c "/usr/local/bin/runai-daemon.sh" || true
-
 # Start supervisor
 log "Starting supervisor to manage cron daemon..."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
