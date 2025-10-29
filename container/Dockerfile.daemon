@@ -21,21 +21,18 @@ RUN mkdir -p /home/runai/.runai && \
     mkdir -p /var/log/supervisor && \
     chmod 755 /var/log/supervisor
 
-# Copy scripts
+# Copy scripts, entrypoint, and RunAI CLI binary
 COPY runai-daemon.sh /usr/local/bin/runai-daemon.sh
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY install-runai.sh /usr/local/bin/install-runai.sh
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY runai-cli /usr/local/bin/runai
 
-# Make scripts executable
+# Make scripts and CLI executable
 RUN chmod +x /usr/local/bin/runai-daemon.sh && \
-    chmod +x /usr/local/bin/install-runai.sh
-
-# Set up cron job for runai user
-# Schedule: 0 0-7,16-23 * * * (every hour except 8am-4pm Pacific)
-RUN echo "0 0-7,16-23 * * * /usr/local/bin/runai-daemon.sh >> /var/log/runai-daemon.log 2>&1" | crontab -u runai -
+    chmod +x /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/runai
 
 # Set working directory
 WORKDIR /home/runai
 
-# Use supervisor to manage cron and other processes
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Use entrypoint script to configure RunAI CLI and start supervisor
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

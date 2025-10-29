@@ -47,10 +47,10 @@ submit_workloads() {
     local cluster=$1
     log "Submitting workloads to cluster: $cluster"
 
-    # Team A Projects (3 workloads, 3 GPUs)
-    runai training submit train-team-a001 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p team-a --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit train-team-a001"
-    runai training submit train-team-a002 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p team-a --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit train-team-a002"
-    runai training submit train-team-a003 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p team-a --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit train-team-a003"
+    # Team A Projects (3 workloads, 12 GPUs)
+    runai training submit train-team-a001 -i runai.jfrog.io/demo/quickstart-demo:latest -g 4 -p team-a --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit train-team-a001"
+    runai training submit train-team-a002 -i runai.jfrog.io/demo/quickstart-demo:latest -g 4 -p team-a --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit train-team-a002"
+    runai training submit train-team-a003 -i runai.jfrog.io/demo/quickstart-demo:latest -g 4 -p team-a --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit train-team-a003"
 
     # User B Projects (6 workloads, 8 GPUs)
     runai training submit train-user-b001 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p user-b --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit train-user-b001"
@@ -60,9 +60,9 @@ submit_workloads() {
     runai training submit train-user-b11 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p user-b --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit train-user-b11"
     runai training submit train-user-b12 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p user-b --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit train-user-b12"
 
-    # LLM Training Projects (3 workloads, 6 GPUs)
-    runai training submit llm-training001 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p llm-training1 --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit llm-training001"
-    runai training submit llm-training002 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p llm-training1 --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit llm-training002"
+    # LLM Training Projects (3 workloads, 8 GPUs)
+    runai training submit llm-training001 -i runai.jfrog.io/demo/quickstart-demo:latest -g 3 -p llm-training1 --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit llm-training001"
+    runai training submit llm-training002 -i runai.jfrog.io/demo/quickstart-demo:latest -g 3 -p llm-training1 --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit llm-training002"
     runai training submit llm-training003 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p llm-training1 --annotation run.ai/simulated-gpu-utilization="86-96" || warn "Failed to submit llm-training003"
 
     # User D Projects (4 workloads, 4 GPUs)
@@ -83,18 +83,13 @@ main() {
         error "RUNAI_USER and RUNAI_PASSWORD environment variables must be set"
         exit 1
     fi
-    
-    # Ensure RunAI CLI is installed
+
+    # Verify RunAI CLI is available
     if ! command -v runai &> /dev/null; then
-        log "RunAI CLI not found, attempting to install..."
-        /usr/local/bin/install-runai.sh
-        
-        if ! command -v runai &> /dev/null; then
-            error "RunAI CLI installation failed"
-            exit 1
-        fi
+        error "RunAI CLI not found in PATH"
+        exit 1
     fi
-    
+
     # Check RunAI CLI version
     log "RunAI CLI version: $(runai version)"
     
