@@ -1,0 +1,41 @@
+# Long-running container with internal cron daemon
+FROM ubuntu:22.04
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies including cron
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    cron \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create user
+RUN useradd -m -s /bin/bash runai
+
+# Create necessary directories
+RUN mkdir -p /home/runai/.runai && \
+    chown -R runai:runai /home/runai && \
+    mkdir -p /var/log/supervisor && \
+    chmod 755 /var/log/supervisor
+
+# Copy scripts
+COPY runai-daemon.sh /usr/local/bin/runai-daemon.sh
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY install-runai.sh /usr/local/bin/install-runai.sh
+
+# Make scripts executable
+RUN chmod +x /usr/local/bin/runai-daemon.sh && \
+    chmod +x /usr/local/bin/install-runai.sh
+
+# Set up cron job for runai user
+# Schedule: 0 0-7,16-23 * * * (every hour except 8am-4pm Pacific)
+RUN echo "0 0-7,16-23 * * * /usr/local/bin/runai-daemon.sh >> /var/log/runai-daemon.log 2>&1" | crontab -u runai -
+
+# Set working directory
+WORKDIR /home/runai
+
+# Use supervisor to manage cron and other processes
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

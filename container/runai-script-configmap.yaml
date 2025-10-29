@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: runai-script
+  namespace: default
+data:
+  runai-script.sh: |
+    #!/bin/bash
+    set -e
+    
+    # Colors for output
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    NC='\033[0m'
+    
+    log() { echo -e "${BLUE}[INFO]${NC} $1"; }
+    success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+    warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+    error() { echo -e "${RED}[ERROR]${NC} $1"; }
+    
+    log "Starting RunAI workload management..."
+    
+    # Install dependencies
+    log "Installing dependencies..."
+    apt-get update && apt-get install -y curl wget
+    
+    # Install RunAI CLI
+    log "Installing RunAI CLI..."
+    bash -c "$(curl -fsSL https://us-demo-west.runailabs-ps.com/api/v1/cli-exposer/installer/linux -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqT0MyWVRPakxjNFB0V0ppVnBCV1RnTG1kS3JMbmRWWWZEODh3YktnelBrIn0.eyJleHAiOjE3NjA0NTU3OTQsImlhdCI6MTc2MDQ1NDg5NCwiYXV0aF90aW1lIjoxNzYwNDU0MTYwLCJqdGkiOiJvZnJ0cnQ6NDNhZWExZTktYjhkOC00ZWMxLWEyNjAtN2FkZTA5MjhkZDlmIiwiaXNzIjoiaHR0cHM6Ly91cy1kZW1vLXdlc3QucnVuYWlsYWJzLXBzLmNvbS9hdXRoL3JlYWxtcy9ydW5haSIsImF1ZCI6WyJydW5haSIsInJ1bmFpLWR1bW15Il0sInN1YiI6InRlc3RAcnVuLmFpIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoicnVuYWktYWRtaW4tdWkiLCJzaWQiOiJhOGY4Yzk4Zi05NWQyLTRiMmYtOWNkNC1mNmVjOTM4OGNhYTAiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHBzOi8vdXMtZGVtby13ZXN0LnJ1bmFpbGFicy1wcy5jb20iXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIl19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIG9mZmxpbmVfYWNjZXNzIiwidGVuYW50X2lkIjoxMDAxLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwic3ViamVjdF91dWlkIjoiOTRkYTA5NTItY2E0Yy00ZTI4LWE3OTgtMWRmMmQ3OTVjNTE2IiwicHJlZmVycmVkX3VzZXJuYW1lIjoidGVzdEBydW4uYWkiLCJjbGllbnRfdHlwZSI6IlJ1bmFpQWRtaW5VSSIsImVtYWlsIjoidGVzdEBydW4uYWkifQ.rMZFV-3INSFgaFNQ3gefhhQP7_ZQohNl4OvV8L7HGz7mMbjVZWoaqdgDwSucRQD_dPG6VOwt8okKSLIKh4KZ7_lzWnFz7JU8MCfjFVpO0xicwWl9JVgSs5SsD32WJpa_soX5_DoJYjSX7Zcf0RyDp0jh-zfR_YG3J0U7kfRypENHFsA2nWDhqtk9136QS8sFG-1ggvEGm7ETl2sdMZ1akPFRboEd5wf3RRQu4dvnp6Zqjz27PJql8r_JxMMqOeTq0dfhtoSSIyZaEVbt5IrxfkbtK5sptfjaAwPqXjmE5RltNw4P_w-HUDP9XIYxEBEGagjGO3mQm10HvxWI0FFcmA')"
+    
+    # Make CLI available
+    ln -sf /root/.runai/bin/runai /usr/local/bin/runai
+    
+    # Login to RunAI
+    log "Logging into RunAI..."
+    runai login --user "$RUNAI_USER" --password "$RUNAI_PASSWORD" --url https://us-demo-west.runailabs-ps.com
+    
+    # Define clusters
+    CLUSTERS=("us-demo-west-1759242125" "us-demo-east")
+    
+    # Process each cluster
+    for cluster in "${CLUSTERS[@]}"; do
+        log "Processing cluster: $cluster"
+        
+        # Set cluster
+        log "Setting cluster: $cluster"
+        runai cluster set "$cluster"
+        
+        # Submit workloads
+        log "Submitting workloads to cluster: $cluster"
+
+        # Team A workloads
+        runai training submit train-team-a001 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p team-a --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit train-team-a002 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p team-a --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit train-team-a003 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p team-a --annotation run.ai/simulated-gpu-utilization="86-96"
+
+        # User B workloads
+        runai training submit train-user-b001 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p user-b --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit train-user-b002 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p user-b --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit train-user-b003 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p user-b --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit train-user-b004 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p user-b --annotation run.ai/simulated-gpu-utilization="86-96"
+
+        # LLM Training workloads
+        runai training submit llm-training001 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p llm-training1 --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit llm-training002 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p llm-training1 --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit llm-training003 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p llm-training1 --annotation run.ai/simulated-gpu-utilization="86-96"
+
+        # User D workloads
+        runai training submit train-user-d001 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p user-d --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit train-user-d002 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p user-d --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit train-user-d003 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p user-d --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit train-user-d004 -i runai.jfrog.io/demo/quickstart-demo:latest -g 1 -p user-d --annotation run.ai/simulated-gpu-utilization="86-96"
+
+        # Additional User B workloads
+        runai training submit train-user-b11 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p user-b --annotation run.ai/simulated-gpu-utilization="86-96"
+        runai training submit train-user-b12 -i runai.jfrog.io/demo/quickstart-demo:latest -g 2 -p user-b --annotation run.ai/simulated-gpu-utilization="86-96"
+        
+        success "Completed workload submission for cluster: $cluster"
+        echo "----------------------------------------"
+    done
+    
+    success "All workloads submitted successfully!"
