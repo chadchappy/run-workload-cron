@@ -366,6 +366,30 @@ run-workload-cron/
 4. **Network Policies**: Consider adding network policies to restrict pod communication
 5. **Secret Rotation**: Regularly rotate Run:ai credentials
 
+### Updating Credentials
+
+To update the Run:ai password or username:
+
+```bash
+# Delete the existing secret
+kubectl delete secret runai-credentials -n default
+
+# Create a new secret with updated credentials
+kubectl create secret generic runai-credentials \
+  --from-literal=username='your-runai-username' \
+  --from-literal=password='your-new-password' \
+  -n default
+
+# Restart the deployment to pick up the new credentials
+kubectl rollout restart deployment runai-workload-manager -n default
+
+# Verify the deployment is running
+kubectl rollout status deployment runai-workload-manager -n default
+
+# Check logs to confirm authentication is successful
+kubectl logs -n default -l app=runai-workload-manager --tail=50
+```
+
 ## 🤝 Contributing
 
 Contributions are welcome! To contribute:
