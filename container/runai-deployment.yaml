@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: runai-workload-manager
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runai-workload-manager
+  namespace: default
+  labels:
+    app: runai-workload-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: runai-workload-manager
+  template:
+    metadata:
+      labels:
+        app: runai-workload-manager
+    spec:
+      serviceAccountName: runai-workload-manager
+      containers:
+      - name: runai-daemon
+        image: ghcr.io/chadchappy/runai-workload-manager:latest
+        imagePullPolicy: Always
+        env:
+        - name: RUNAI_USER
+          valueFrom:
+            secretKeyRef:
+              name: runai-credentials
+              key: username
+        - name: RUNAI_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: runai-credentials
+              key: password
+        - name: TZ
+          value: America/Los_Angeles
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log
+      volumes:
+      - name: logs
+        emptyDir: {}
+      restartPolicy: Always
+
