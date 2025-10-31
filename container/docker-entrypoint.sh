@@ -30,8 +30,12 @@ printenv | grep -v "no_proxy" >> /etc/environment
 
 # Set up cron schedule
 log "Setting up cron schedule..."
-# Cron schedule: Every hour except 8am-4pm Pacific (0 0-7,16-23 * * *)
-echo "0 0-7,16-23 * * * . /etc/environment && /usr/local/bin/runai-daemon.sh >> /var/log/runai-daemon.log 2>&1" | crontab -u runai -
+# Cron schedule: Every hour except 8am-4pm Pacific
+# Container runs in UTC, so we need to convert:
+# - Midnight-7am Pacific (0-7) = 7am-2pm UTC (7-14)
+# - 4pm-11pm Pacific (16-23) = 11pm-6am UTC (23,0-6)
+# Combined: 0-14,23 UTC = avoid 15-22 UTC (8am-3pm Pacific)
+echo "0 0-14,23 * * * . /etc/environment && /usr/local/bin/runai-daemon.sh >> /var/log/runai-daemon.log 2>&1" | crontab -u runai -
 
 # Create supervisor configuration
 log "Creating supervisor configuration..."
